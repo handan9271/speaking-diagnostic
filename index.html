@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>口语水平诊断 · Nick International Education</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{--teal:#0A5A45;--teal-dk:#063d2e;--teal-lt:#e4f3ee;--gold:#C9963A;--gold-pale:#fff8e0;--ink:#1a1714;--ink2:#42403c;--ink3:#8a837a;--paper:#faf8f4;--warm:#f5f3ef;--red:#b83228;--red-bg:#fff2f0;--green:#2e7d32;--green-lt:#e8f5e9;--purple:#4B3FA0;--purple-lt:#f3f1fd;--rule:rgba(60,55,45,.1);--shadow:0 2px 12px rgba(0,0,0,.06);--r:14px;}
+  body{font-family:'DM Sans','Noto Sans SC',sans-serif;background:var(--warm);color:var(--ink);min-height:100vh;}
+  .nav{background:var(--teal-dk);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;}
+  .nav-logo{font-size:15px;font-weight:700;color:#fff;}.nav-logo span{color:var(--gold);}
+  .page{max-width:700px;margin:0 auto;padding:32px 20px 80px;}
+  .screen{display:none;}.screen.active{display:block;}
+
+  /* Welcome */
+  .welcome{text-align:center;padding:60px 20px;}
+  .welcome-title{font-size:26px;font-weight:800;color:var(--teal-dk);margin-bottom:8px;}
+  .welcome-sub{font-size:14px;color:var(--ink3);margin-bottom:32px;line-height:1.7;}
+  .welcome-input{width:100%;max-width:320px;padding:14px 18px;border:2px solid var(--rule);border-radius:var(--r);font-family:inherit;font-size:16px;text-align:center;color:var(--ink);margin-bottom:16px;}
+  .welcome-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px rgba(10,90,69,.1);}
+  .btn-big{font-family:inherit;font-size:15px;font-weight:700;padding:14px 40px;border-radius:var(--r);border:none;cursor:pointer;background:var(--teal);color:#fff;}
+  .btn-big:hover{background:var(--teal-dk);}
+  .btn-big:disabled{background:#ccc;cursor:not-allowed;}
+
+  /* Questions */
+  .q-progress{display:flex;gap:4px;margin-bottom:24px;}
+  .q-dot{flex:1;height:4px;border-radius:2px;background:#e0e0e0;}.q-dot.done{background:var(--teal);}.q-dot.current{background:var(--gold);}
+  .q-card{background:#fff;border-radius:var(--r);padding:28px;box-shadow:var(--shadow);}
+  .q-topic{font-size:10px;font-weight:700;color:var(--teal);letter-spacing:.15em;margin-bottom:4px;}
+  .q-num{font-size:12px;color:var(--ink3);margin-bottom:8px;}
+  .q-text{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:20px;line-height:1.5;}
+  .q-input{width:100%;border:2px solid var(--rule);border-radius:10px;padding:14px 16px;font-family:inherit;font-size:14px;color:var(--ink);resize:vertical;min-height:120px;line-height:1.7;}
+  .q-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px rgba(10,90,69,.1);}
+  .q-footer{display:flex;justify-content:space-between;align-items:center;margin-top:16px;}
+  .q-wc{font-size:12px;color:var(--ink3);}
+  .q-nav{display:flex;gap:8px;}
+  .btn-nav{font-family:inherit;font-size:13px;font-weight:600;padding:10px 24px;border-radius:8px;border:none;cursor:pointer;}
+  .btn-prev{background:#f0f0f0;color:var(--ink2);}
+  .btn-next{background:var(--teal);color:#fff;}
+  .btn-next:hover{background:var(--teal-dk);}
+
+  /* Loading */
+  .loading{text-align:center;padding:80px 20px;}
+  .spinner{width:48px;height:48px;border:4px solid var(--rule);border-top-color:var(--teal);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 24px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-title{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+  .loading-sub{font-size:13px;color:var(--ink3);}
+
+  /* Results */
+  .result-header{text-align:center;margin-bottom:24px;}
+  .result-name{font-size:14px;color:var(--ink3);margin-bottom:4px;}
+  .result-overall{font-family:'DM Sans';font-size:56px;font-weight:800;color:var(--teal);}
+  .result-label{font-size:12px;color:var(--ink3);}
+  .score-grid{display:flex;gap:10px;margin-bottom:20px;}
+  .score-card{flex:1;background:#fff;border-radius:var(--r);padding:16px;text-align:center;box-shadow:var(--shadow);}
+  .score-dim{font-size:11px;color:var(--ink3);margin-bottom:4px;}
+  .score-num{font-family:'DM Sans';font-size:28px;font-weight:800;color:var(--teal);}
+  .score-bar-wrap{height:6px;background:#eee;border-radius:3px;margin-top:8px;overflow:hidden;}
+  .score-bar-fill{height:100%;border-radius:3px;background:var(--teal);}
+  .feedback-card{background:#fff;border-radius:var(--r);padding:20px 24px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .fb-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px;}
+  .fb-text{font-size:13px;color:var(--ink2);line-height:1.8;}
+  .error-card{background:var(--red-bg);border-radius:10px;padding:12px 16px;margin-bottom:8px;border-left:3px solid var(--red);}
+  .error-orig{font-size:12px;color:var(--red);text-decoration:line-through;}
+  .error-fix{font-size:12px;color:var(--green);font-weight:600;margin-top:2px;}
+  .error-why{font-size:11px;color:var(--ink3);margin-top:2px;}
+
+  /* Plan */
+  .plan-header{background:var(--teal);color:#fff;border-radius:var(--r);padding:20px 24px;margin-bottom:16px;text-align:center;}
+  .plan-header h2{font-size:18px;margin-bottom:4px;}
+  .plan-header p{font-size:12px;opacity:.8;}
+  .day-card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden;}
+  .day-hd{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+  .day-hd:hover{background:rgba(0,0,0,.01);}
+  .day-title{font-size:14px;font-weight:700;}
+  .day-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;}
+  .day-status.todo{background:#f0f0f0;color:var(--ink3);}
+  .day-status.done{background:var(--green-lt);color:var(--green);}
+  .day-arrow{font-size:13px;color:var(--ink3);transition:transform .2s;}
+  .day-card.collapsed .day-arrow{transform:rotate(-90deg);}
+  .day-card.collapsed .day-body{display:none;}
+  .day-body{padding:0 18px 16px;}
+  .day-course{font-size:12px;color:var(--purple);font-weight:600;margin-bottom:8px;padding:8px 12px;background:var(--purple-lt);border-radius:8px;}
+  .day-error{font-size:12px;margin-bottom:8px;}
+  .diag-orig{background:var(--paper);border:1.5px solid var(--rule);border-radius:8px;padding:10px 14px;margin:8px 0;position:relative;}
+  .diag-orig::before{content:'你的诊断原文';position:absolute;top:-8px;left:12px;font-size:9px;font-weight:700;color:var(--ink3);background:#fff;padding:0 6px;}
+  .diag-orig-text{font-size:12px;color:var(--ink2);line-height:1.8;font-style:italic;}
+  .hw-label{font-size:11px;color:var(--ink3);margin:8px 0 4px;}
+  .hw-input{width:100%;border:1.5px solid var(--rule);border-radius:8px;padding:10px 14px;font-family:inherit;font-size:13px;color:var(--ink);resize:vertical;min-height:80px;}
+  .hw-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,90,69,.1);}
+  .hw-note{font-size:10px;padding:8px 12px;border-radius:6px;margin-top:8px;line-height:1.8;background:var(--red-bg);color:var(--ink2);border-left:3px solid var(--red);}
+  .btn-submit-hw{background:var(--teal);color:#fff;padding:8px 18px;font-size:12px;font-family:inherit;border:none;border-radius:6px;cursor:pointer;font-weight:700;margin-top:10px;float:right;}
+  .btn-submit-all{font-family:inherit;font-size:15px;font-weight:700;padding:14px 40px;border-radius:var(--r);border:none;cursor:pointer;background:var(--gold);color:#fff;display:block;margin:24px auto;width:fit-content;}
+  .btn-submit-all:hover{filter:brightness(1.1);}
+  .btn-submit-all:disabled{background:#ccc;cursor:not-allowed;}
+
+  /* Final */
+  .final{text-align:center;padding:40px 20px;}
+  .final-icon{font-size:64px;margin-bottom:16px;}
+  .final-title{font-size:24px;font-weight:800;color:var(--teal);margin-bottom:8px;}
+  .final-sub{font-size:14px;color:var(--ink3);line-height:1.7;margin-bottom:24px;}
+  .final-cta{background:linear-gradient(135deg,var(--teal),var(--teal-dk));border-radius:var(--r);padding:24px;color:#fff;margin-top:24px;}
+  .final-cta h3{font-size:16px;margin-bottom:8px;}
+  .final-cta p{font-size:13px;opacity:.8;margin-bottom:12px;}
+  .btn-cta{font-family:inherit;font-size:14px;font-weight:700;padding:12px 32px;border-radius:var(--r);border:none;cursor:pointer;background:var(--gold);color:#fff;}
+
+  @media(max-width:640px){.page{padding:20px 12px 60px;}.score-grid{flex-wrap:wrap;}.score-card{min-width:calc(50% - 6px);}.welcome{padding:40px 12px;}}
+</style>
+</head>
+<body>
+<div class="nav"><div class="nav-logo">Nick International<span> Education</span></div></div>
+<div class="page">
+
+<!-- S1: Welcome -->
+<div class="screen active" id="s-welcome">
+  <div class="welcome">
+    <div style="font-size:48px;margin-bottom:16px;">&#127891;</div>
+    <div class="welcome-title">口语水平诊断 + 定制练习</div>
+    <div class="welcome-sub">回答 8 道真题 → AI 即时评分 → 生成你的一周定制练习<br>完成练习后获得个性化反馈<br>约 30-40 分钟</div>
+    <input class="welcome-input" id="userName" placeholder="输入你的名字" oninput="checkName()"><br>
+    <button class="btn-big" id="btnStart" disabled onclick="startQuiz()">开始诊断</button>
+  </div>
+</div>
+
+<!-- S2: Questions -->
+<div class="screen" id="s-questions">
+  <div class="q-progress" id="qProgress"></div>
+  <div class="q-card">
+    <div class="q-topic" id="qTopic"></div>
+    <div class="q-num" id="qNum"></div>
+    <div class="q-text" id="qText"></div>
+    <textarea class="q-input" id="qInput" placeholder="Type your answer in English..." oninput="updateWC()"></textarea>
+    <div class="q-footer">
+      <div class="q-wc"><span id="qWC">0</span> words</div>
+      <div class="q-nav">
+        <button class="btn-nav btn-prev" id="btnPrev" onclick="prevQ()">上一题</button>
+        <button class="btn-nav btn-next" id="btnNext" onclick="nextQ()">下一题</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S3: Loading diagnostic -->
+<div class="screen" id="s-loading">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div class="loading-title" id="loadTitle">AI 正在分析你的回答...</div>
+    <div class="loading-sub" id="loadSub">基于 109 个真实考官打分样本校准</div>
+  </div>
+</div>
+
+<!-- S4: Results + Plan -->
+<div class="screen" id="s-results">
+  <div id="resultsContent"></div>
+</div>
+
+<!-- S5: Final -->
+<div class="screen" id="s-final">
+  <div id="finalContent"></div>
+</div>
+
+</div>
+
+<script>
+const API_KEY = 'sk-f0aa6e4c0e9a4bd79a04ded1e61b93d8';
+const API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const WEBHOOK = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=8b53d043-052e-408b-ad2e-79f9962e7c5d';
+
+const QUESTIONS = [
+  {topic:'Language',q:'What language do you speak?'},
+  {topic:'Language',q:'Do you think it is difficult to learn English?'},
+  {topic:'Language',q:'Do you speak other languages?'},
+  {topic:'Language',q:"Do you think it's important to learn languages?"},
+  {topic:'The city you live in',q:'What city do you live in?'},
+  {topic:'The city you live in',q:'Do you like this city? Why?'},
+  {topic:'The city you live in',q:'How long have you lived in this city?'},
+  {topic:'The city you live in',q:'Are there big changes in this city?'},
+];
+
+let currentQ=0, answers=new Array(8).fill(''), userName='';
+let diagResult=null, planData=null;
+
+function checkName(){userName=document.getElementById('userName').value.trim();document.getElementById('btnStart').disabled=!userName;}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function startQuiz(){show('s-questions');renderQ();}
+function renderQ(){
+  const q=QUESTIONS[currentQ];
+  let dots='';for(let i=0;i<8;i++)dots+=`<div class="q-dot ${i<currentQ?'done':i===currentQ?'current':''}"></div>`;
+  document.getElementById('qProgress').innerHTML=dots;
+  document.getElementById('qTopic').textContent='PART 1 · '+q.topic.toUpperCase();
+  document.getElementById('qNum').textContent=`Question ${currentQ+1} of 8`;
+  document.getElementById('qText').textContent=q.q;
+  document.getElementById('qInput').value=answers[currentQ];
+  document.getElementById('btnPrev').style.display=currentQ===0?'none':'';
+  document.getElementById('btnNext').textContent=currentQ===7?'提交诊断':'下一题';
+  updateWC();document.getElementById('qInput').focus();
+}
+function updateWC(){const v=document.getElementById('qInput').value.trim();document.getElementById('qWC').textContent=v?v.split(/\s+/).length:0;answers[currentQ]=document.getElementById('qInput').value;}
+function prevQ(){answers[currentQ]=document.getElementById('qInput').value;if(currentQ>0){currentQ--;renderQ();}}
+function nextQ(){answers[currentQ]=document.getElementById('qInput').value;if(currentQ<7){currentQ++;renderQ();}else{submitDiagnostic();}}
+
+async function callAI(messages){
+  const resp=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},body:JSON.stringify({model:'deepseek-chat',messages,max_tokens:3000,temperature:0.3})});
+  if(!resp.ok)throw new Error('API error');
+  const data=await resp.json();
+  const raw=data.choices[0].message.content;
+  const m=raw.match(/\{[\s\S]*\}/);
+  return JSON.parse(m[0]);
+}
+
+async function submitDiagnostic(){
+  const filled=answers.filter(a=>a.trim().length>5).length;
+  if(filled<6){alert('请至少回答 6 道题');return;}
+  show('s-loading');
+  const aText=QUESTIONS.map((q,i)=>`[Part 1] Q: ${q.q}\nA: ${answers[i].trim()||'(no answer)'}`).join('\n\n');
+
+  try{
+    // Step 1: Score
+    diagResult=await callAI([
+      {role:'system',content:`You are Judge Nick, a former senior IELTS examiner. Score using STRICT criteria calibrated against real examiner scores.
+
+CALIBRATION (109 samples):
+Band 5.0—FC=5 LR=5 GRA=5 Pron=5: "because i think chemistry is so interesting... blue is a so colorful color"
+Band 6.0—FC=6 LR=6 GRA=5 Pron=6: "i am a teacher in primary school, i teach English"
+Band 7.0—FC=7 LR=6 GRA=7 Pron=7: "i live in an apartment... the living room because it's spacious"
+Band 8.0—FC=8 LR=8 GRA=8 Pron=8: "I'm majoring in animal science... the intersection of biology and agriculture"
+Band 9.0—FC=9 LR=9 GRA=9 Pron=9: "introversion isn't about being antisocial, it's about where you draw your energy from"
+
+Score independently. Overall=ceil(avg×2)/2. JSON only:
+{"scores":{"FC":int,"LR":int,"GRA":int,"Pron":int},"overall":number,"verdict_zh":"一句话中文总评","strengths":["中文,引用原文"],"weaknesses":["中文,引用原文具体错误"],"errors":[{"original":"exact quote","fixed":"corrected","reason_zh":"中文"}],"tip_zh":"一条最关键建议"}`},
+      {role:'user',content:`Student: ${userName}\n\n${aText}\n\nDeliver verdict.`}
+    ]);
+
+    // Step 2: Generate plan
+    document.getElementById('loadTitle').textContent='正在生成你的定制练习计划...';
+    document.getElementById('loadSub').textContent='基于你的具体错误，每天一个针对性练习';
+
+    planData=await callAI([
+      {role:'system',content:`You are an IELTS teacher designing a 7-day practice plan. Based on the student's diagnostic answers and errors, create daily tasks.
+
+Each day has:
+1. An error pattern to fix (quote the student's EXACT original text)
+2. A rewrite task for one of their diagnostic questions
+3. A specific requirement (what to fix in the rewrite)
+
+Output JSON:
+{"days":[
+  {"day":1,"title_zh":"标题","error_type_zh":"错误类型","original_quote":"学生原文引用","fix_explanation_zh":"怎么改+为什么","rewrite_q_index":0-7,"rewrite_requirement_zh":"重写要求"},
+  ...7 days
+]}`},
+      {role:'user',content:`Student: ${userName}\nScores: FC=${diagResult.scores.FC} LR=${diagResult.scores.LR} GRA=${diagResult.scores.GRA} Pron=${diagResult.scores.Pron}\nOverall: ${diagResult.overall}\n\nWeaknesses: ${diagResult.weaknesses.join('; ')}\n\nErrors: ${diagResult.errors.map(e=>e.original+' → '+e.fixed+' ('+e.reason_zh+')').join('; ')}\n\nFull answers:\n${aText}\n\nGenerate 7-day plan targeting their weakest areas first.`}
+    ]);
+
+    renderResults();
+  }catch(err){
+    console.error(err);
+    document.getElementById('loadTitle').textContent='出了点问题';
+    document.getElementById('loadSub').innerHTML='<button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-family:inherit;cursor:pointer;">重试</button>';
+  }
+}
+
+function renderResults(){
+  const s=diagResult.scores;
+  const bw=n=>Math.round((n/9)*100);
+  const errHTML=(diagResult.errors||[]).map(e=>`<div class="error-card"><div class="error-orig">${e.original}</div><div class="error-fix">→ ${e.fixed}</div><div class="error-why">${e.reason_zh}</div></div>`).join('');
+  const strHTML=(diagResult.strengths||[]).map(s=>`<div style="font-size:13px;color:var(--green);line-height:1.8;">&#10003; ${s}</div>`).join('');
+  const weakHTML=(diagResult.weaknesses||[]).map(w=>`<div style="font-size:13px;color:var(--red);line-height:1.8;">&#10007; ${w}</div>`).join('');
+
+  // Plan days
+  let planHTML='';
+  if(planData&&planData.days){
+    planData.days.forEach((d,i)=>{
+      const qi=d.rewrite_q_index||0;
+      const origAnswer=answers[qi]||'';
+      const origQ=QUESTIONS[qi]?.q||'';
+      planHTML+=`
+      <div class="day-card${i>0?' collapsed':''}" id="day${i}">
+        <div class="day-hd" onclick="this.parentElement.classList.toggle('collapsed')">
+          <div class="day-title">Day ${d.day} · ${d.title_zh}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="day-status todo" id="ds${i}">未完成</div>
+            <div class="day-arrow">▼</div>
+          </div>
+        </div>
+        <div class="day-body">
+          <div class="day-course">今日重点：${d.error_type_zh}</div>
+          <div class="diag-orig"><div class="diag-orig-text">${d.original_quote}</div></div>
+          <div class="day-error" style="color:var(--ink2);font-size:12px;line-height:1.8;margin:8px 0;">${d.fix_explanation_zh}</div>
+          <div class="hw-label" style="font-weight:700;color:var(--ink);margin-top:12px;">重写练习 · ${origQ}</div>
+          <div class="diag-orig"><div class="diag-orig-text">${origAnswer}</div></div>
+          <div class="hw-label">你的新版本</div>
+          <textarea class="hw-input" id="hw${i}" placeholder="" oninput="saveProgress()"></textarea>
+          <div class="hw-note">${d.rewrite_requirement_zh}</div>
+          <button class="btn-submit-hw" onclick="markDone(${i})">保存</button>
+          <div style="clear:both;"></div>
+        </div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('resultsContent').innerHTML=`
+    <div class="result-header">
+      <div class="result-name">${userName} 的诊断结果</div>
+      <div class="result-overall">${diagResult.overall}</div>
+      <div class="result-label">IELTS Speaking (estimated)</div>
+    </div>
+    <div class="score-grid">
+      <div class="score-card"><div class="score-dim">FC 流利度</div><div class="score-num">${s.FC}</div><div class="score-bar-wrap"><div class="score-bar-fill" style="width:${bw(s.FC)}%;"></div></div></div>
+      <div class="score-card"><div class="score-dim">LR 词汇</div><div class="score-num">${s.LR}</div><div class="score-bar-wrap"><div class="score-bar-fill" style="width:${bw(s.LR)}%;"></div></div></div>
+      <div class="score-card"><div class="score-dim">GRA 语法</div><div class="score-num">${s.GRA}</div><div class="score-bar-wrap"><div class="score-bar-fill" style="width:${bw(s.GRA)}%;"></div></div></div>
+      <div class="score-card"><div class="score-dim">Pron 发音</div><div class="score-num">${s.Pron}</div><div class="score-bar-wrap"><div class="score-bar-fill" style="width:${bw(s.Pron)}%;"></div></div></div>
+    </div>
+    <div class="feedback-card"><div class="fb-title">${diagResult.verdict_zh}</div></div>
+    <div class="feedback-card"><div class="fb-title" style="color:var(--green);">你的优势</div>${strHTML}</div>
+    <div class="feedback-card"><div class="fb-title" style="color:var(--red);">需要提升的地方</div>${weakHTML}</div>
+    ${errHTML?`<div class="feedback-card"><div class="fb-title">具体语法/用词问题</div>${errHTML}</div>`:''}
+    <div class="feedback-card" style="background:var(--teal-lt);border-left:4px solid var(--teal);"><div class="fb-title" style="color:var(--teal);">最关键的一步</div><div class="fb-text">${diagResult.tip_zh}</div></div>
+
+    <div class="plan-header"><h2>你的 7 天定制练习</h2><p>基于你的具体错误生成 · 每天一个针对性练习 · 做完提交即可</p></div>
+    ${planHTML}
+    <button class="btn-submit-all" id="btnSubmitAll" onclick="submitAllHomework()">全部完成，提交练习</button>
+  `;
+  show('s-results');
+  loadProgress();
+}
+
+function markDone(i){
+  saveProgress();
+  const el=document.getElementById('ds'+i);
+  el.textContent='已保存';el.className='day-status done';
+  setTimeout(()=>{
+    const card=document.getElementById('day'+i);
+    card.classList.add('collapsed');
+    // Open next
+    const next=document.getElementById('day'+(i+1));
+    if(next)next.classList.remove('collapsed');
+  },500);
+}
+
+function saveProgress(){
+  const data={};
+  for(let i=0;i<7;i++){const el=document.getElementById('hw'+i);if(el&&el.value.trim())data['hw'+i]=el.value;}
+  localStorage.setItem('diag_plan_'+userName,JSON.stringify(data));
+}
+
+function loadProgress(){
+  const raw=localStorage.getItem('diag_plan_'+userName);
+  if(!raw)return;
+  try{const d=JSON.parse(raw);for(let i=0;i<7;i++){const el=document.getElementById('hw'+i);if(el&&d['hw'+i]){el.value=d['hw'+i];const ds=document.getElementById('ds'+i);if(ds){ds.textContent='已保存';ds.className='day-status done';}}}}catch(e){}
+}
+
+async function submitAllHomework(){
+  const filled=[];
+  for(let i=0;i<7;i++){const el=document.getElementById('hw'+i);if(el&&el.value.trim().length>10)filled.push(i);}
+  if(filled.length<5){alert('请至少完成 5 天的练习再提交');return;}
+
+  show('s-loading');
+  document.getElementById('loadTitle').textContent='AI 正在分析你的练习成果...';
+  document.getElementById('loadSub').textContent='对比诊断原文和重写版本';
+
+  try{
+    // Collect homework answers
+    let hwText='';
+    for(let i=0;i<7;i++){
+      const el=document.getElementById('hw'+i);
+      if(el&&el.value.trim()){
+        const qi=planData.days[i]?.rewrite_q_index||0;
+        hwText+=`Day ${i+1} (${planData.days[i]?.title_zh||''}):\nOriginal: ${answers[qi]}\nRewrite: ${el.value.trim()}\n\n`;
+      }
+    }
+
+    // Score homework
+    const fbResult=await callAI([
+      {role:'system',content:`You are an IELTS teacher reviewing a student's practice homework. They rewrote their diagnostic answers after learning about their errors. Compare original vs rewrite.
+
+JSON output:
+{"new_scores":{"FC":int,"LR":int,"GRA":int,"Pron":int},"new_overall":number,"improvements_zh":["具体进步1,引用新旧对比","进步2"],"remaining_zh":["仍需改进1","仍需改进2"],"summary_zh":"2-3句中文总结"}`},
+      {role:'user',content:`Student: ${userName}\nDiagnostic scores: FC=${diagResult.scores.FC} LR=${diagResult.scores.LR} GRA=${diagResult.scores.GRA} Pron=${diagResult.scores.Pron} Overall=${diagResult.overall}\n\nHomework rewrites:\n${hwText}\n\nEvaluate improvement.`}
+    ]);
+
+    // Notify via webhook
+    try{
+      const ns=fbResult.new_scores;
+      const webhookMsg={
+        msgtype:'markdown',
+        markdown:{content:`## 诊断+练习完成通知\n**学员**: ${userName}\n**诊断分数**: Overall ${diagResult.overall} (FC=${diagResult.scores.FC} LR=${diagResult.scores.LR} GRA=${diagResult.scores.GRA} Pron=${diagResult.scores.Pron})\n**练习后分数**: Overall ${fbResult.new_overall} (FC=${ns.FC} LR=${ns.LR} GRA=${ns.GRA} Pron=${ns.Pron})\n**变化**: ${diagResult.overall} → ${fbResult.new_overall}\n**完成天数**: ${filled.length}/7\n**进步**: ${(fbResult.improvements_zh||[]).join('; ')}\n**仍需改进**: ${(fbResult.remaining_zh||[]).join('; ')}`}
+      };
+      fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(webhookMsg)}).catch(()=>{});
+    }catch(e){}
+
+    // Render final
+    const ns=fbResult.new_scores;
+    const impHTML=(fbResult.improvements_zh||[]).map(s=>`<div style="font-size:13px;color:var(--green);line-height:1.8;">&#10003; ${s}</div>`).join('');
+    const remHTML=(fbResult.remaining_zh||[]).map(s=>`<div style="font-size:13px;color:var(--red);line-height:1.8;">&#10007; ${s}</div>`).join('');
+
+    document.getElementById('finalContent').innerHTML=`
+      <div class="final">
+        <div class="final-icon">&#127942;</div>
+        <div class="final-title">练习完成！</div>
+        <div class="final-sub">${fbResult.summary_zh}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <div style="flex:1;text-align:center;padding:16px;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);">
+          <div style="font-size:10px;color:var(--ink3);">诊断时</div>
+          <div style="font-family:'DM Sans';font-size:36px;font-weight:800;color:var(--red);text-decoration:line-through;">${diagResult.overall}</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:16px;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);">
+          <div style="font-size:10px;color:var(--ink3);">练习后</div>
+          <div style="font-family:'DM Sans';font-size:36px;font-weight:800;color:var(--teal);">${fbResult.new_overall}</div>
+        </div>
+      </div>
+      <div class="score-grid">
+        <div class="score-card"><div class="score-dim">FC</div><div class="score-num">${diagResult.scores.FC}→${ns.FC}</div></div>
+        <div class="score-card"><div class="score-dim">LR</div><div class="score-num">${diagResult.scores.LR}→${ns.LR}</div></div>
+        <div class="score-card"><div class="score-dim">GRA</div><div class="score-num">${diagResult.scores.GRA}→${ns.GRA}</div></div>
+        <div class="score-card"><div class="score-dim">Pron</div><div class="score-num">${diagResult.scores.Pron}→${ns.Pron}</div></div>
+      </div>
+      <div class="feedback-card"><div class="fb-title" style="color:var(--green);">你的进步</div>${impHTML}</div>
+      ${remHTML?`<div class="feedback-card"><div class="fb-title" style="color:var(--red);">仍需改进</div>${remHTML}</div>`:''}
+      <div class="final-cta">
+        <h3>想要更系统的提升？</h3>
+        <p>基于你的诊断数据，我们可以生成完整的 6-12 周定制学习计划<br>精准定位短板 · 每天告诉你看什么课、练什么题 · AI 即时批改</p>
+        <button class="btn-cta" onclick="alert('请添加老师微信获取完整学习计划')">联系老师获取完整计划</button>
+      </div>
+    `;
+    show('s-final');
+  }catch(err){
+    console.error(err);
+    document.getElementById('loadTitle').textContent='评分出了点问题';
+    document.getElementById('loadSub').innerHTML='<button onclick="location.reload()" style="margin-top:12px;padding:8px 20px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-family:inherit;cursor:pointer;">重试</button>';
+  }
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){const qs=document.getElementById('s-questions');if(qs.classList.contains('active'))nextQ();}});
+</script>
+</body>
+</html>
