@@ -380,15 +380,16 @@ JSON output:
       {role:'user',content:`Student: ${userName}\nDiagnostic scores: FC=${diagResult.scores.FC} LR=${diagResult.scores.LR} GRA=${diagResult.scores.GRA} Pron=${diagResult.scores.Pron} Overall=${diagResult.overall}\n\nHomework rewrites:\n${hwText}\n\nEvaluate improvement.`}
     ]);
 
-    // Notify via webhook
+    // Upload HTML snapshot to GitHub + notify webhook with link
     try{
       const ns=fbResult.new_scores;
+      const pageUrl = await uploadSnapshot(userName, diagResult, fbResult, filled.length);
       const webhookMsg={
         msgtype:'markdown',
-        markdown:{content:`## 诊断+练习完成通知\n**学员**: ${userName}\n**诊断分数**: Overall ${diagResult.overall} (FC=${diagResult.scores.FC} LR=${diagResult.scores.LR} GRA=${diagResult.scores.GRA} Pron=${diagResult.scores.Pron})\n**练习后分数**: Overall ${fbResult.new_overall} (FC=${ns.FC} LR=${ns.LR} GRA=${ns.GRA} Pron=${ns.Pron})\n**变化**: ${diagResult.overall} → ${fbResult.new_overall}\n**完成天数**: ${filled.length}/7\n**进步**: ${(fbResult.improvements_zh||[]).join('; ')}\n**仍需改进**: ${(fbResult.remaining_zh||[]).join('; ')}`}
+        markdown:{content:`## 诊断+练习完成通知\n**学员**: ${userName}\n**诊断分数**: Overall ${diagResult.overall} (FC=${diagResult.scores.FC} LR=${diagResult.scores.LR} GRA=${diagResult.scores.GRA} Pron=${diagResult.scores.Pron})\n**练习后分数**: Overall ${fbResult.new_overall} (FC=${ns.FC} LR=${ns.LR} GRA=${ns.GRA} Pron=${ns.Pron})\n**变化**: ${diagResult.overall} → ${fbResult.new_overall}\n**完成天数**: ${filled.length}/7\n**查看完整页面**: [点击查看](${pageUrl})\n**进步**: ${(fbResult.improvements_zh||[]).join('; ')}\n**仍需改进**: ${(fbResult.remaining_zh||[]).join('; ')}`}
       };
       fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(webhookMsg)}).catch(()=>{});
-    }catch(e){}
+    }catch(e){console.error('Upload/webhook error:',e);}
 
     // Render final
     const ns=fbResult.new_scores;
@@ -434,6 +435,111 @@ JSON output:
 }
 
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){const qs=document.getElementById('s-questions');if(qs.classList.contains('active'))nextQ();}});
+
+// === Upload HTML snapshot to GitHub Pages ===
+const GH_TOKEN='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';
+const GH_REPO='handan9271/student-results';
+
+async function uploadSnapshot(name, diag, fb, daysComplete){
+  const ts=new Date().toISOString().slice(0,10);
+  const slug=name.toLowerCase().replace(/[^a-z0-9]/g,'-');
+  const filename=`${slug}_${ts}.html`;
+  const s=diag.scores, ns=fb.new_scores;
+  const bw=n=>Math.round((n/9)*100);
+
+  // Collect homework content
+  let hwSections='';
+  if(planData&&planData.days){
+    planData.days.forEach((d,i)=>{
+      const el=document.getElementById('hw'+i);
+      const qi=d.rewrite_q_index||0;
+      const orig=answers[qi]||'';
+      const rewrite=el?el.value.trim():'';
+      if(rewrite){
+        hwSections+=`<div style="background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:700;color:#1a1714;margin-bottom:8px;">Day ${d.day} · ${d.title_zh}</div>
+          <div style="font-size:10px;font-weight:700;color:#8a837a;margin-bottom:4px;">错误类型: ${d.error_type_zh}</div>
+          <div style="background:#faf8f4;border:1.5px solid rgba(60,55,45,.1);border-radius:8px;padding:10px 14px;margin:8px 0;position:relative;">
+            <div style="position:absolute;top:-8px;left:12px;font-size:9px;font-weight:700;color:#8a837a;background:#fff;padding:0 6px;">诊断原文</div>
+            <div style="font-size:12px;color:#42403c;line-height:1.8;font-style:italic;">${orig}</div>
+          </div>
+          <div style="background:#e8f5e9;border:1.5px solid #2e7d32;border-radius:8px;padding:10px 14px;margin:8px 0;position:relative;">
+            <div style="position:absolute;top:-8px;left:12px;font-size:9px;font-weight:700;color:#2e7d32;background:#fff;padding:0 6px;">重写版本</div>
+            <div style="font-size:12px;color:#42403c;line-height:1.8;">${rewrite}</div>
+          </div>
+        </div>`;
+      }
+    });
+  }
+
+  // Error cards
+  const errHTML=(diag.errors||[]).map(e=>`<div style="background:#fff2f0;border-radius:10px;padding:10px 14px;margin-bottom:6px;border-left:3px solid #b83228;"><div style="font-size:12px;color:#b83228;text-decoration:line-through;">${e.original}</div><div style="font-size:12px;color:#2e7d32;font-weight:600;margin-top:2px;">→ ${e.fixed}</div><div style="font-size:11px;color:#8a837a;margin-top:2px;">${e.reason_zh}</div></div>`).join('');
+  const strHTML=(diag.strengths||[]).map(s=>`<div style="font-size:13px;color:#2e7d32;line-height:1.8;">&#10003; ${s}</div>`).join('');
+  const weakHTML=(diag.weaknesses||[]).map(w=>`<div style="font-size:13px;color:#b83228;line-height:1.8;">&#10007; ${w}</div>`).join('');
+  const impHTML=(fb.improvements_zh||[]).map(s=>`<div style="font-size:13px;color:#2e7d32;line-height:1.8;">&#10003; ${s}</div>`).join('');
+  const remHTML=(fb.remaining_zh||[]).map(s=>`<div style="font-size:13px;color:#b83228;line-height:1.8;">&#10007; ${s}</div>`).join('');
+
+  const html=`<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${name} · 口语诊断结果</title>
+<style>@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap');*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'DM Sans','Noto Sans SC',sans-serif;background:#f5f3ef;color:#1a1714;line-height:1.7;}.nav{background:#063d2e;padding:14px 24px;color:#fff;font-size:15px;font-weight:700;}.nav span{color:#C9963A;}.page{max-width:700px;margin:0 auto;padding:24px 20px 60px;}.card{background:#fff;border-radius:14px;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:16px;}.card-title{font-size:14px;font-weight:700;margin-bottom:10px;}.score-grid{display:flex;gap:10px;margin:16px 0;}.sc{flex:1;background:#faf8f4;border-radius:12px;padding:14px;text-align:center;}.sc-dim{font-size:11px;color:#8a837a;}.sc-num{font-family:'DM Sans';font-size:26px;font-weight:800;color:#0A5A45;}.sc-bar{height:6px;background:#eee;border-radius:3px;margin-top:6px;overflow:hidden;}.sc-fill{height:100%;border-radius:3px;background:#0A5A45;}.sep{text-align:center;padding:20px 0;font-size:14px;font-weight:800;color:#0A5A45;}</style></head>
+<body>
+<div class="nav">Nick International<span> Education</span> · ${name} 的诊断报告</div>
+<div class="page">
+  <div style="text-align:center;margin:24px 0;">
+    <div style="font-size:14px;color:#8a837a;">${name} 的诊断结果 · ${ts}</div>
+    <div style="font-family:'DM Sans';font-size:56px;font-weight:800;color:#0A5A45;">${diag.overall}</div>
+    <div style="font-size:12px;color:#8a837a;">IELTS Speaking (estimated)</div>
+  </div>
+  <div class="score-grid">
+    <div class="sc"><div class="sc-dim">FC 流利度</div><div class="sc-num">${s.FC}</div><div class="sc-bar"><div class="sc-fill" style="width:${bw(s.FC)}%;"></div></div></div>
+    <div class="sc"><div class="sc-dim">LR 词汇</div><div class="sc-num">${s.LR}</div><div class="sc-bar"><div class="sc-fill" style="width:${bw(s.LR)}%;"></div></div></div>
+    <div class="sc"><div class="sc-dim">GRA 语法</div><div class="sc-num">${s.GRA}</div><div class="sc-bar"><div class="sc-fill" style="width:${bw(s.GRA)}%;"></div></div></div>
+    <div class="sc"><div class="sc-dim">Pron 发音</div><div class="sc-num">${s.Pron}</div><div class="sc-bar"><div class="sc-fill" style="width:${bw(s.Pron)}%;"></div></div></div>
+  </div>
+  <div class="card"><div class="card-title">${diag.verdict_zh}</div></div>
+  <div class="card"><div class="card-title" style="color:#2e7d32;">优势</div>${strHTML}</div>
+  <div class="card"><div class="card-title" style="color:#b83228;">需要提升</div>${weakHTML}</div>
+  ${errHTML?`<div class="card"><div class="card-title">具体错误</div>${errHTML}</div>`:''}
+
+  <div class="sep">── 7 天定制练习 · 原文 vs 重写 ──</div>
+  ${hwSections}
+
+  <div class="sep">── 练习后评估 ──</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <div style="flex:1;text-align:center;padding:16px;background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);"><div style="font-size:10px;color:#8a837a;">诊断时</div><div style="font-family:'DM Sans';font-size:36px;font-weight:800;color:#b83228;text-decoration:line-through;">${diag.overall}</div></div>
+    <div style="flex:1;text-align:center;padding:16px;background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);"><div style="font-size:10px;color:#8a837a;">练习后</div><div style="font-family:'DM Sans';font-size:36px;font-weight:800;color:#0A5A45;">${fb.new_overall}</div></div>
+  </div>
+  <div class="score-grid">
+    <div class="sc"><div class="sc-dim">FC</div><div class="sc-num">${s.FC}→${ns.FC}</div></div>
+    <div class="sc"><div class="sc-dim">LR</div><div class="sc-num">${s.LR}→${ns.LR}</div></div>
+    <div class="sc"><div class="sc-dim">GRA</div><div class="sc-num">${s.GRA}→${ns.GRA}</div></div>
+    <div class="sc"><div class="sc-dim">Pron</div><div class="sc-num">${s.Pron}→${ns.Pron}</div></div>
+  </div>
+  ${impHTML?`<div class="card"><div class="card-title" style="color:#2e7d32;">进步</div>${impHTML}</div>`:''}
+  ${remHTML?`<div class="card"><div class="card-title" style="color:#b83228;">仍需改进</div>${remHTML}</div>`:''}
+  <div class="card" style="background:#e4f3ee;border-left:4px solid #0A5A45;"><div class="card-title" style="color:#0A5A45;">总结</div><div style="font-size:13px;color:#42403c;line-height:1.8;">${fb.summary_zh}</div></div>
+</div></body></html>`;
+
+  // Upload to GitHub
+  const content=btoa(unescape(encodeURIComponent(html)));
+  try{
+    const resp=await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${filename}`,{
+      method:'PUT',
+      headers:{'Authorization':'Bearer '+GH_TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({message:`${name} diagnostic ${ts}`,content})
+    });
+    if(resp.ok){
+      const url=`https://handan9271.github.io/student-results/${filename}`;
+      console.log('Uploaded:',url);
+      return url;
+    }else{
+      console.error('Upload failed:',await resp.text());
+      return 'upload failed';
+    }
+  }catch(e){
+    console.error('Upload error:',e);
+    return 'upload error';
+  }
+}
 </script>
 </body>
 </html>
